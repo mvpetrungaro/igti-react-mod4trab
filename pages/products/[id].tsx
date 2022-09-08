@@ -1,88 +1,83 @@
-import Head from 'next/head'
-import styles from '../../styles/Home.module.css'
-import Image from 'next/image'
-import { Product } from '..'
-import { useFetch } from '../../hooks/useFetch'
+import Image from "next/image";
+import { Product } from "../../models/product";
+import { useFetch } from "../../hooks/useFetch";
+import PageContainer from "../../components/PageContainer";
 
 export async function getStaticPaths() {
   const products = (await fetch(
-    'https://fakestoreapi.com/products?limit=10'
-  ).then((res) => res.json())) as Product[]
+    "http://fakestoreapi.com/products?limit=10"
+  ).then((res) => res.json())) as Product[];
 
   return {
     paths: products.map((p) => ({
       params: { id: p.id.toString() },
     })),
     fallback: true,
-  }
+  };
 }
 
-type PathParams = { params: { id: string } }
+type PathParams = { params: { id: string } };
 
 export async function getStaticProps({ params }: PathParams) {
   const product = await fetch(
-    `https://fakestoreapi.com/products/${params.id}`
-  ).then((res) => res.json())
+    `http://fakestoreapi.com/products/${params.id}`
+  ).then((res) => res.json());
 
   return {
     props: {
       product,
     },
-  }
+  };
 }
 
-type ProductPageProps = { product: Product }
+type ProductPageProps = { product: Product };
 
-const ProductPage = (
-  { product }: ProductPageProps = { product: { id: 0 } }
-) => {
-  const { data, error } = useFetch<Product>(`products/${product?.id}`)
-
+const ProductPage = ({ product }: ProductPageProps) => {
+  //Default value in case of fallback
   if (!product) {
-    return <div>Loading ...</div>
+    product = { id: 0, title: "", category: "", image: "" };
+  }
+
+  const { data, error } = useFetch<Product>(`products/${product.id}`);
+
+  if (!product.id) {
+    return <div>Loading ...</div>;
+  }
+
+  if (error) {
+    console.log(error);
+    return <div>Error getting updated product price, please try again.</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>IGTI - React</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <PageContainer
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <h1>{product.title}</h1>
 
-      <main
-        className={styles.main}
+      <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          flex: 1,
+          width: "100%",
+          position: "relative",
+          margin: 20,
         }}
       >
-        <h1 className={styles.title}>{product.title}</h1>
+        <Image
+          src={product.image.replace("https", "http")}
+          alt={product.title}
+          layout="fill"
+          objectFit="contain"
+        />
+      </div>
 
-        <div
-          style={{
-            flex: 1,
-            width: '100%',
-            position: 'relative',
-            margin: 20,
-          }}
-        >
-          <Image
-            src={product.image!}
-            alt={product.title}
-            layout="fill"
-            objectFit="contain"
-          />
-        </div>
+      <big style={{ margin: 10 }}>R$ {data?.price?.toFixed(2)}</big>
+    </PageContainer>
+  );
+};
 
-        <big style={{ margin: 10 }}>R$ {data?.price?.toFixed(2)}</big>
-      </main>
-
-      <footer className={styles.footer}>
-        IGTI - React - Module 4: Practice
-      </footer>
-    </div>
-  )
-}
-
-export default ProductPage
+export default ProductPage;
