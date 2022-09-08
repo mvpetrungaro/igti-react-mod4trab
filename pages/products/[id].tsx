@@ -68,7 +68,7 @@ const ProductPage = (
           }}
         >
           <Image
-            src={product.image}
+            src={product.image!}
             alt={product.title}
             layout="fill"
             objectFit="contain"
